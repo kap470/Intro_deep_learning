@@ -1,3 +1,8 @@
+
+# First part:
+To run the code go to the folder ./Intro_deep_learning, and run from terminal: python ./hw2.py
+
+# Second part
 # California Housing: Model Comparison
 
 ## Dataset Exploration
@@ -109,7 +114,7 @@ Two models were trained:
 | Model | MSE | RMSE | R² |
 |---|---:|---:|---:|
 | Linear Regression | 0.528984 | 0.727313 | 0.594323 |
-| PyTorch MLP | 0.456846 | 0.675904 | 0.649646 |
+| PyTorch MLP | 0.426274 | 0.652896 | 0.673092 |
 
 ### Analysis
 

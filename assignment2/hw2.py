@@ -334,7 +334,12 @@ else:
 markdown_fence = "```"
 
 
-readme_content = f"""# California Housing: Model Comparison
+readme_content = f"""
+# First part:
+To run the code go to the folder ./Intro_deep_learning, and run from terminal: python ./hw2.py
+
+# Second part
+# California Housing: Model Comparison
 
 ## Dataset Exploration
 
