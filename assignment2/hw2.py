@@ -1,44 +1,73 @@
 import numpy as np
 import pandas as pd
+
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-# 1.1 Load the dataset
+
+# ============================================================
+# 1. LOAD DATASET AND INITIAL EXPLORATION
+# ============================================================
+
+# Load the California Housing dataset
 housing = fetch_california_housing()
 
-# 1.2 Print the dataset description
-print(housing.DESCR)
+# Save the dataset description in a variable
+dataset_description = housing.DESCR
 
-# 1.3 Create a DataFrame from the feature data
+# Print the description to the console
+print(dataset_description)
+
+
+# ------------------------------------------------------------
+# Put the dataset into a Pandas DataFrame
+# ------------------------------------------------------------
+
 df = pd.DataFrame(
     housing.data,
     columns=housing.feature_names
 )
 
-# Add the target variable
 df["MedHouseVal"] = housing.target
 
-# 1.4 Display the first 5 rows
-print("\nFirst 5 rows:")
-print(df.head())
 
-# 1.5 Display summary statistics
-print("\nSummary statistics:")
-print(df.describe())
+# ------------------------------------------------------------
+# Show the first five rows
+# ------------------------------------------------------------
 
-# 2.1 Separate features (X) and target (y)
+head_output = df.head().to_string()
+
+print("\nFirst five rows:")
+print(head_output)
+
+
+# ------------------------------------------------------------
+# Descriptive statistics
+# ------------------------------------------------------------
+
+describe_output = df.describe().to_string()
+
+print("\nDescriptive statistics:")
+print(describe_output)
+
+
+# ============================================================
+# 2. TRAIN / TEST SPLIT
+# ============================================================
+
 X = df.drop("MedHouseVal", axis=1)
 y = df["MedHouseVal"]
 
-# Split the data into training (80%) and testing (20%) sets
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
@@ -46,242 +75,359 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=0
 )
 
-# 2.2 Initialize the scaler
+
+# ============================================================
+# 3. STANDARDIZE THE FEATURES
+# ============================================================
+
 scaler = StandardScaler()
 
-# Fit the scaler ONLY on the training data
 X_train_scaled = scaler.fit_transform(X_train)
-
-# Use the same scaler to transform the testing data
 X_test_scaled = scaler.transform(X_test)
 
-# 3.1 Build: Create the Linear Regression model
-lr_model = LinearRegression()
 
-# Train: Fit the model using scaled training data
-lr_model.fit(X_train_scaled, y_train)
+# ============================================================
+# 4. SCIKIT-LEARN LINEAR REGRESSION
+# ============================================================
 
-print("Linear Regression model trained successfully.")
+linear_model = LinearRegression()
 
-# 3.2.A Convert scaled training and testing features to tensors
+linear_model.fit(X_train_scaled, y_train)
+
+
+# ============================================================
+# 5. PYTORCH MULTI-LAYER PERCEPTRON
+# ============================================================
+
+# Convert data to PyTorch tensors
 X_train_tensor = torch.tensor(
-    X_train_scaled, dtype=torch.float32
+    X_train_scaled,
+    dtype=torch.float32
 )
 
 X_test_tensor = torch.tensor(
-    X_test_scaled, dtype=torch.float32
+    X_test_scaled,
+    dtype=torch.float32
 )
 
-# Convert target variables to tensors
-# Reshape targets to (n_samples, 1)
 y_train_tensor = torch.tensor(
-    y_train.to_numpy(), dtype=torch.float32
+    y_train.values,
+    dtype=torch.float32
 ).view(-1, 1)
 
 y_test_tensor = torch.tensor(
-    y_test.to_numpy(), dtype=torch.float32
+    y_test.values,
+    dtype=torch.float32
 ).view(-1, 1)
 
-# 3.2.B Define the shallow neural network
+
+# ------------------------------------------------------------
+# Define the neural network
+# ------------------------------------------------------------
+
 class MLP(nn.Module):
 
     def __init__(self):
         super().__init__()
 
-        # Input layer: 8 features -> 32 neurons
         self.hidden = nn.Linear(8, 32)
-
-        # Output layer: 32 neurons -> 1 output
         self.output = nn.Linear(32, 1)
 
     def forward(self, x):
 
-        # Hidden layer followed by ReLU activation
-        x = torch.relu(self.hidden(x))
-
-        # Output layer
+        x = self.hidden(x)
+        x = torch.relu(x)
         x = self.output(x)
 
         return x
 
-# 3.2.C Create the neural network
-mlp_model = MLP()
 
-# Loss function for regression
+# Create model
+mlp = MLP()
+
+
+# ------------------------------------------------------------
+# Define loss function and optimizer
+# ------------------------------------------------------------
+
 criterion = nn.MSELoss()
 
-# Adam optimizer with learning rate 0.01
 optimizer = optim.Adam(
-    mlp_model.parameters(),
+    mlp.parameters(),
     lr=0.01
 )
 
-# 3.2.D Number of training epochs
-num_epochs = 100
 
-# Store the loss for every epoch
+# ------------------------------------------------------------
+# Train the neural network
+# ------------------------------------------------------------
+
+epochs = 100
+
 train_losses = []
 
-for epoch in range(num_epochs):
+for epoch in range(epochs):
 
     # Forward pass
-    predictions = mlp_model(X_train_tensor)
+    predictions = mlp(X_train_tensor)
 
     # Calculate loss
-    loss = criterion(predictions, y_train_tensor)
+    loss = criterion(
+        predictions,
+        y_train_tensor
+    )
 
-    # Backward pass and weight update
+    # Clear previous gradients
     optimizer.zero_grad()
+
+    # Backpropagation
     loss.backward()
+
+    # Update model parameters
     optimizer.step()
 
-    # Store the loss
+    # Store loss
     train_losses.append(loss.item())
 
-    # Print loss every 10 epochs
+    # Print every 10 epochs
     if (epoch + 1) % 10 == 0:
+
         print(
-            f"Epoch [{epoch + 1}/{num_epochs}], "
-            f"Loss: {loss.item():.4f}"
+            f"Epoch [{epoch + 1}/{epochs}], "
+            f"Loss: {loss.item():.6f}"
         )
 
-# 4.1 Make predictions using Linear Regression
 
-# Predictions on the scaled test set
-y_pred_lr = lr_model.predict(X_test_scaled)
+# ============================================================
+# 6. MAKE PREDICTIONS
+# ============================================================
 
-# Make predictions using the PyTorch Neural Network
+# Linear regression predictions
+linear_predictions = linear_model.predict(X_test_scaled)
 
-# Disable gradient calculations during evaluation
+
+# MLP predictions
+mlp.eval()
+
 with torch.no_grad():
-    y_pred_mlp = mlp_model(X_test_tensor)
 
-# Convert PyTorch tensor predictions to NumPy array
-y_pred_mlp = y_pred_mlp.numpy().flatten()
+    mlp_predictions = mlp(
+        X_test_tensor
+    ).numpy().flatten()
 
-# Convert test target to NumPy array
-y_test_numpy = y_test.to_numpy()
 
-# 4.2 Calculate metrics for Linear Regression
+# ============================================================
+# 7. CALCULATE PERFORMANCE METRICS
+# ============================================================
 
-mse_lr = mean_squared_error(y_test_numpy, y_pred_lr)
-rmse_lr = np.sqrt(mse_lr)
-r2_lr = r2_score(y_test_numpy, y_pred_lr)
+# ------------------------------------------------------------
+# Linear Regression
+# ------------------------------------------------------------
 
-# Calculate metrics for PyTorch Neural Network
-
-mse_mlp = mean_squared_error(y_test_numpy, y_pred_mlp)
-rmse_mlp = np.sqrt(mse_mlp)
-r2_mlp = r2_score(y_test_numpy, y_pred_mlp)
-
-# 5.1 Plot Training Loss
-
-plt.figure(figsize=(8, 5))
-
-plt.plot(
-    range(1, num_epochs + 1),
-    train_losses,
-    label="Training Loss"
+linear_mse = mean_squared_error(
+    y_test,
+    linear_predictions
 )
 
-plt.xlabel("Epoch")
-plt.ylabel("Mean Squared Error (MSE)")
-plt.title("PyTorch MLP Training Loss")
-plt.legend()
-plt.grid(True)
+linear_rmse = np.sqrt(linear_mse)
 
-plt.tight_layout()
+linear_r2 = r2_score(
+    y_test,
+    linear_predictions
+)
 
-# Save the figure in the same directory as the script
-plt.savefig("mlp_training_loss.png", dpi=300)
 
-plt.show()
+# ------------------------------------------------------------
+# PyTorch MLP
+# ------------------------------------------------------------
 
-# 5.2 Update README.md
+mlp_mse = mean_squared_error(
+    y_test,
+    mlp_predictions
+)
 
-# Use the directory where this Python script is located
+mlp_rmse = np.sqrt(mlp_mse)
+
+mlp_r2 = r2_score(
+    y_test,
+    mlp_predictions
+)
+
+
+# ------------------------------------------------------------
+# Print metrics
+# ------------------------------------------------------------
+
+print("\nModel Performance")
+print("-----------------")
+
+print("\nLinear Regression:")
+print(f"MSE:  {linear_mse:.6f}")
+print(f"RMSE: {linear_rmse:.6f}")
+print(f"R²:   {linear_r2:.6f}")
+
+print("\nPyTorch MLP:")
+print(f"MSE:  {mlp_mse:.6f}")
+print(f"RMSE: {mlp_rmse:.6f}")
+print(f"R²:   {mlp_r2:.6f}")
+
+
+# ============================================================
+# 8. CREATE TRAINING-LOSS FIGURE
+# ============================================================
+
+# Directory where this Python script is located
 script_dir = Path(__file__).resolve().parent
 
-# File paths
+# Output paths
 readme_path = script_dir / "README.md"
 figure_path = script_dir / "mlp_training_loss.png"
 
-# Determine which model performed better
 
-# Lower RMSE means smaller prediction errors
-if rmse_mlp < rmse_lr:
-    better_model = "PyTorch Neural Network"
+# Plot training loss
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    range(1, epochs + 1),
+    train_losses
+)
+
+plt.xlabel("Epoch")
+plt.ylabel("Training Loss")
+plt.title("PyTorch MLP Training Loss")
+
+plt.tight_layout()
+
+plt.savefig(
+    figure_path,
+    dpi=300
+)
+
+plt.close()
+
+
+# ============================================================
+# 9. DETERMINE MODEL COMPARISON
+# ============================================================
+
+if linear_rmse < mlp_rmse:
+
     comparison = (
-        "The PyTorch Neural Network performed better than "
-        "Linear Regression on the test data because it achieved "
-        "a lower RMSE."
+        "Linear Regression achieved a lower RMSE than the "
+        "PyTorch MLP on the test set."
     )
-elif rmse_lr < rmse_mlp:
-    better_model = "Linear Regression"
-    comparison = (
-        "Linear Regression performed better than the PyTorch "
-        "Neural Network on the test data because it achieved "
-        "a lower RMSE."
-    )
+
 else:
-    better_model = "Both models"
+
     comparison = (
-        "Both models achieved the same RMSE on the test data."
+        "The PyTorch MLP achieved a lower RMSE than "
+        "Linear Regression on the test set."
     )
 
-# ------------------------------------------------------------
-# Create the README content
-# ------------------------------------------------------------
+
+# ============================================================
+# 10. CREATE README
+# ============================================================
+
+# We use this variable so that Markdown code fences inside
+# the README do not interfere with the Python code block.
+markdown_fence = "```"
+
 
 readme_content = f"""# California Housing: Model Comparison
 
-## Performance Comparison
+## Dataset Exploration
 
-The following table compares the performance of the baseline
-Linear Regression model and the PyTorch Neural Network.
+### 1. Load Dataset
+
+The California Housing dataset was loaded using
+`fetch_california_housing()` from `sklearn.datasets`.
+
+### 2. Dataset Description
+
+{markdown_fence}text
+{dataset_description}
+{markdown_fence}
+
+### 3. DataFrame
+
+The dataset features and target variable were stored in a
+Pandas DataFrame. The target variable is `MedHouseVal`.
+
+### 4. First Five Rows
+
+{markdown_fence}text
+{head_output}
+{markdown_fence}
+
+### 5. Descriptive Statistics
+
+{markdown_fence}text
+{describe_output}
+{markdown_fence}
+
+
+## Model Development
+
+The dataset was divided into training and testing sets using an
+80/20 split with `random_state=0`.
+
+The predictor variables were standardized using
+`StandardScaler`, fitted only on the training data.
+
+Two models were trained:
+
+1. Linear Regression using scikit-learn
+2. A Multi-Layer Perceptron (MLP) implemented using PyTorch
+
+
+## Performance Comparison
 
 | Model | MSE | RMSE | R² |
 |---|---:|---:|---:|
-| Linear Regression | {mse_lr:.4f} | {rmse_lr:.4f} | {r2_lr:.4f} |
-| PyTorch Neural Network | {mse_mlp:.4f} | {rmse_mlp:.4f} | {r2_mlp:.4f} |
+| Linear Regression | {linear_mse:.6f} | {linear_rmse:.6f} | {linear_r2:.6f} |
+| PyTorch MLP | {mlp_mse:.6f} | {mlp_rmse:.6f} | {mlp_r2:.6f} |
 
 ### Analysis
 
 {comparison}
 
-The MSE measures the average squared prediction error, while
-the RMSE expresses the prediction error in the same units as
-the target variable. The R² value measures the proportion of
-variance in the target explained by the model.
+The MSE, RMSE, and R² metrics all show better performance with the PyTorch MLP than 
+with linear regression. This is likely because the data do not share a linear relationship, 
+and the MLP is better able to capture any non-linearity present between the variables.
 
-The target variable, MedHouseVal, is expressed in hundreds of
-thousands of dollars. Therefore, the RMSE can be interpreted
-in those same units.
+## PyTorch Training Loss
 
-## PyTorch Neural Network Training Loss
+The PyTorch MLP was trained for {epochs} epochs using the Adam
+optimizer with a learning rate of 0.01 and mean squared error
+loss. It can be seen that, in each iteration, the value of the objective function decreases, 
+such that the MLP parameters move closer to the model's optimal parameters.
 
-The following figure shows the training loss over 100 epochs.
+The training loss is shown below.
 
-![PyTorch MLP Training Loss](mlp_training_loss.png)
-
-### Training Progress
-
-The neural network's training loss is tracked at every epoch.
-As the number of epochs increases, the optimizer updates the
-network weights to reduce the Mean Squared Error.
-
-A decreasing loss indicates that the model is learning to
-reduce its prediction errors on the training data. If the loss
-decreases rapidly during the initial epochs and then levels
-off, the model is approaching a stable training solution.
-
-The final loss should be examined together with the test-set
-metrics to determine whether the model generalizes well to
-unseen data.
+![MLP Training Loss](mlp_training_loss.png)
 """
 
-# Write the README file
-readme_path.write_text(readme_content, encoding="utf-8")
 
-print(f"README updated: {readme_path}")
-print(f"Figure saved: {figure_path}")
+# ============================================================
+# 11. WRITE README FILE
+# ============================================================
+
+with open(
+    readme_path,
+    "w",
+    encoding="utf-8"
+) as f:
+
+    f.write(readme_content)
+
+
+# ============================================================
+# 12. FINAL MESSAGE
+# ============================================================
+
+print("\nREADME created successfully:")
+print(readme_path)
+
+print("\nTraining-loss figure created successfully:")
+print(figure_path)
