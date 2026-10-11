@@ -1,10 +1,5 @@
-#Introduction to Deep Learning
-#Image Classification and Segmentation with CNNs
-
-Some text with **bold** and *italic*.
-
-- Bullet one
-- Bullet two
+# **Introduction to Deep Learning**
+## **Image Classification and Segmentation with CNNs**
 
 DATASET INFORMATION
 Number of training samples: 3680
