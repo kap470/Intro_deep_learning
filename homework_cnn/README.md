@@ -12,7 +12,7 @@ Classification label: 0 (Cat)
 Mask dimensions (width, height): (394, 500)
 Unique mask values: [1 2 3]
 
-Saved figure: dataset_samples.png
+![Dataset samples](dataset_samples.png)
 
 PROCESSED TRAINING BATCH
 Images shape: torch.Size([16, 3, 128, 128])
