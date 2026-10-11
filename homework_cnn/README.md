@@ -1,6 +1,7 @@
 # **Introduction to Deep Learning**
 ## **Image Classification and Segmentation with CNNs**
 
+```
 DATASET INFORMATION
 Number of training samples: 3680
 Number of testing samples:  3669
@@ -21,4 +22,5 @@ Image data type: torch.float32
 Label data type: torch.int64
 Mask data type:  torch.int64
 Processed mask values: [0 1 2]
+```
 
