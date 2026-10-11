@@ -1,7 +1,7 @@
 # **Introduction to Deep Learning**
-## **Image Classification and Segmentation with CNNs**
+Image Classification and Segmentation with CNNs
 
-## **Set up environment**
+## **1. Set up environment**
 
 ## Install the dependencies using:
 ```
@@ -9,17 +9,17 @@ The project requires PyTorch, Torchvision, NumPy, Matplotlib, and tqdm.
 
 python -m pip install torch torchvision numpy matplotlib tqdm
 ```
-# Environment ahd hardware
+## Environment and hardware
 ```
 - Execution environment: VS Code running under WSL2
 - Hardware: NVIDIA Quadro P1000 GPU with approximately 4 GB of dedicated memory
 - CUDA: Available; PyTorch reports CUDA 12.4
 ```
-# Download the input (raw) data
+## Download the input (raw) data
 ```
 Run python data.py from you working directory
 ```
-# Run the code
+## Run the code
 ```
 Run the following commands from the project directory:
 
