@@ -1,4 +1,7 @@
 
+# AI assistance: OpenAI ChatGPT (GPT-6).
+# Used to assist with code development, debugging, and explanations.
+# https://chatgpt.com/
 import numpy as np
 import matplotlib.pyplot as plt
 

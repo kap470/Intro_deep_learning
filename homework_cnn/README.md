@@ -55,3 +55,5 @@ Processed mask values: [0 1 2]
 
 ![Dataset samples](dataset_samples.png)
 Figure 1. First three training images (left), their segmentation masks (right)
+
+## **3. MODEL BUILDING AND TRAINING**
