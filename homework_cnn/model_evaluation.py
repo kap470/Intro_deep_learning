@@ -1,4 +1,6 @@
-
+# AI assistance: OpenAI ChatGPT (GPT-6).
+# Used to assist with code development, debugging, and explanations.
+# https://chatgpt.com/
 import torch
 import torch.nn as nn
 from sklearn.metrics import accuracy_score

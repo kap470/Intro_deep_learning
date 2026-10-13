@@ -1,4 +1,3 @@
-
 # AI assistance: OpenAI ChatGPT (GPT-6).
 # Used to assist with code development, debugging, and explanations.
 # https://chatgpt.com/
