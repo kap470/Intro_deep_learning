@@ -66,14 +66,14 @@ Figure 1. First three training images (left), their segmentation masks (right)
 ```
 
 ## **4. Model Evaluation**
-```
+
 Classification Results
 | Model | Test accuracy |
 |---|---:|
 | Regular CNN | 78.74% |
 | ResNet-18 | 81.90% |
 | Always-Dog baseline | 67.76% |
-
+```
 U-Net Segmentation Results
 Pixel accuracy: 86.20%
 ```
