@@ -196,7 +196,7 @@ def train_model(model, name, epochs=100, lr=0.01):
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        # keep the checkpoint with the lowest validation loss
+        # keep the checkpoint with the lowest validation loss (keep paramaters that minimize the objective function)
         if val_loss < best_val:
             best_val, best_epoch = val_loss, epoch
             best_state = copy.deepcopy(model.state_dict())
@@ -294,7 +294,7 @@ def predict(model, loader):
 
 
 def test_metrics(model, ckpt_path):
-    # restore the checkpoint selected by validation loss (not the last-epoch weights)
+    # restore the checkpoint selected by validation loss (could be different than the last-epoch weights)
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model = model.to(device)
     y_true, y_pred = predict(model, test_loader)

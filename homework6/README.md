@@ -182,3 +182,16 @@ The test set was not used to choose epochs, tune hyperparameters, or update weig
 | F1-score | 0.5060 | 0.4875 |
 
 Precision, recall and F1 are computed for class 1 (the positive class, sklearn's default for binary labels).
+
+## Part 5: Analysis and Interpretation
+
+### Training behavior
+
+Both models learn quickly in the first 20 epochs, with loss moving from about 0.66 to about 0.60, and then moved around 0.58–0.60 until epoch 100. Training and validation loss stay close together, so there is no clear sign of overfitting. 
+
+Both curves are noisy along the x-axis, with occasional validation spikes (GAT reaches about 0.68 between epochs 70-80). The selected checkpoints (GCN epoch 63, GAT epoch 64), with values ​​close to 0.5, which demonstrates that the last epoch is not necessarily the best.
+
+### Test performance
+
+Both models reach the same test accuracy of 0.6323 (141 of 223 graphs correct). GAT has slightly higher precision (0.6724 vs 0.6562), while GCN has slightly higher recall (0.4118 vs 0.3824) and F1-score (0.5060 vs 0.4875).
+
