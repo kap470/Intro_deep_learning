@@ -87,6 +87,8 @@ add(f"""## Part 2: Train, Validation, Test Split
 
 - **Random seed:** `random_state={SEED}`""")
 
+print("Data preprocessing finished")
+
 ### Part 3: Model Building and Training
 
 torch.manual_seed(SEED)
@@ -274,3 +276,9 @@ Training progress (every 10 epochs):
 ```
 
 ![GAT loss curves]({gat_plot})""")
+
+#Write README.md
+with open("README.md", "w") as f:
+    f.write("\n".join(readme))
+
+print("README.md written")

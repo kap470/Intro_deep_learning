@@ -1,17 +1,16 @@
 # GNN for Classification on PROTEINS (TUDataset)
 
-```
-In this task it is used Graph Convolutional Network (GCN) and a Graph Attention Network (GAT) for protein classification
-```
+This project uses a Graph Convolutional Network (GCN) and a Graph Attention Network (GAT) to classify proteins as enzymes or non-enzymes.
+
 ## Part 1: Data Loading and Exploration
 
 ### Dataset information
 
-| Property | Value |
+|Property|Value|
 |---|---|
-| Total number of graphs | 1113 |
-| Number of classes | 2 |
-| Number of node features | 3 |
+|Total number of graphs| 1113 |
+|Number of classes| 2 |
+|Number of node features| 3 |
 
 ### First graph (`dataset[0]`)
 ```
@@ -90,3 +89,80 @@ tensor([0])
 ### Average number of nodes per graph
 
 **39.06** nodes per graph (over all 1113 graphs).
+
+## Part 2: Train, Validation, Test Split
+
+|Dataset|Number of graphs|Purpose|
+|---|---|---|
+|Training|778| Fit model parameters |
+|Validation|112| Select each model checkpoint |
+|Test|223| Final evaluation only |
+
+- **Random seed:** `random_state=0`
+
+## Part 3: Model Building and Training
+
+### Mini-batches
+
+| Loader | Graphs | Mini-batches |
+|---|---|---|
+| Training | 778 | 25 |
+| Validation | 112 | 4 |
+| Test | 223 | 7 |
+
+Example training mini-batch:
+```
+DataBatch(edge_index=[2, 5608], x=[1545, 3], y=[32], batch=[1545], ptr=[33])
+```
+- `x` shape: `(1545, 3)` (`[num_nodes, num_features]`)
+- `edge_index` shape: `(2, 5608)` (`[2, num_edges]`)
+- `batch` shape: `(1545,)` (graph index of each node)
+- `y` shape: `(32,)` (one label per graph)
+
+### Model 1: GCN
+
+Two `GCNConv` layers (ReLU, dropout 0.5 after the first), `global_mean_pool`, and a `Linear` output layer.
+
+- `in_channels` = 3, `hidden_channels` = 64, `num_classes` = 2
+- Loss: `CrossEntropyLoss`, optimizer: `Adam` (lr = 0.01), epochs: 100, batch size: 32
+- **Best checkpoint:** epoch 57 (validation loss = 0.5753)
+
+Training progress (every 10 epochs):
+```
+Epoch  10 | Train Loss: 0.6131 | Val Loss: 0.6125
+Epoch  20 | Train Loss: 0.5946 | Val Loss: 0.6121
+Epoch  30 | Train Loss: 0.5870 | Val Loss: 0.6016
+Epoch  40 | Train Loss: 0.5898 | Val Loss: 0.6024
+Epoch  50 | Train Loss: 0.5904 | Val Loss: 0.6021
+Epoch  60 | Train Loss: 0.5826 | Val Loss: 0.5929
+Epoch  70 | Train Loss: 0.5777 | Val Loss: 0.5772
+Epoch  80 | Train Loss: 0.5776 | Val Loss: 0.5850
+Epoch  90 | Train Loss: 0.5781 | Val Loss: 0.5823
+Epoch 100 | Train Loss: 0.5843 | Val Loss: 0.5954
+```
+
+![GCN loss curves](loss_gcn.png)
+
+### Model 2: GAT
+
+Two `GATConv` layers (first with 4 heads, ELU, dropout 0.5 after the first; second with 1 head and `concat=False`), `global_mean_pool`, and a `Linear` output layer.
+
+- `in_channels` = 3, `hidden_channels` = 64, `heads` = 4, `num_classes` = 2
+- Loss: `CrossEntropyLoss`, optimizer: `Adam` (lr = 0.01), epochs: 100, batch size: 32
+- **Best checkpoint:** epoch 93 (validation loss = 0.5781)
+
+Training progress (every 10 epochs):
+```
+Epoch  10 | Train Loss: 0.6424 | Val Loss: 0.6379
+Epoch  20 | Train Loss: 0.6050 | Val Loss: 0.6147
+Epoch  30 | Train Loss: 0.5916 | Val Loss: 0.6099
+Epoch  40 | Train Loss: 0.6041 | Val Loss: 0.5944
+Epoch  50 | Train Loss: 0.5971 | Val Loss: 0.6967
+Epoch  60 | Train Loss: 0.5876 | Val Loss: 0.6573
+Epoch  70 | Train Loss: 0.5849 | Val Loss: 0.6019
+Epoch  80 | Train Loss: 0.5965 | Val Loss: 0.6322
+Epoch  90 | Train Loss: 0.5962 | Val Loss: 0.5856
+Epoch 100 | Train Loss: 0.5897 | Val Loss: 0.5836
+```
+
+![GAT loss curves](loss_gat.png)
