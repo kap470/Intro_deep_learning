@@ -1,3 +1,5 @@
+#Used Anthropic. (2026). Claude Sonnet 5.5 [Large language model]. https://claude.ai. Accessed November 24, 2026.
+# The model was used to debug code and assist with a more efficient implementation of the model.
 import copy
 import torch
 import torch.nn as nn
