@@ -1,24 +1,23 @@
-# GNN Graph Classification on PROTEINS
+# GNN for Classification on PROTEINS (TUDataset)
 
+```
+In this task it is used Graph Convolutional Network (GCN) and a Graph Attention Network (GAT) for protein classification
+```
 ## Part 1: Data Loading and Exploration
 
 ### Dataset information
 
 | Property | Value |
 |---|---|
-| Dataset | `PROTEINS` (TUDataset) |
 | Total number of graphs | 1113 |
 | Number of classes | 2 |
 | Number of node features | 3 |
 
 ### First graph (`dataset[0]`)
-
 ```
 Data(edge_index=[2, 162], x=[42, 3], y=[1])
 ```
-
 **Node feature matrix `x`** — shape: `(42, 3)`
-
 ```
 tensor([[1., 0., 0.],
         [1., 0., 0.],
@@ -63,9 +62,7 @@ tensor([[1., 0., 0.],
         [0., 1., 0.],
         [0., 1., 0.]])
 ```
-
 **Edge index `edge_index`** — shape: `(2, 162)`
-
 ```
 tensor([[ 0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,
           4,  4,  5,  5,  5,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,  8,  9,
@@ -86,13 +83,10 @@ tensor([[ 0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  3,  3,  4,  4,  4,  4,
          12, 24, 31, 34, 41,  2, 13, 23, 33,  8,  9, 18, 19, 16, 27, 37, 26, 36,
          38,  3,  4, 15, 37,  3,  4, 13, 14, 22, 32, 41,  1, 12, 23, 31, 33, 40]])
 ```
-
 **Graph label `y`**
-
 ```
 tensor([0])
 ```
-
 ### Average number of nodes per graph
 
 **39.06** nodes per graph (over all 1113 graphs).
