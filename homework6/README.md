@@ -88,15 +88,15 @@ tensor([0])
 ```
 ### Average number of nodes per graph
 
-**39.06** nodes per graph (over all 1113 graphs).
+**39.06** nodes per graph.
 
 ## Part 2: Train, Validation, Test Split
 
-|Dataset|Number of graphs|Purpose|
+|Dataset|Number of graphs
 |---|---|---|
-|Training|778| Fit model parameters |
-|Validation|112| Select each model checkpoint |
-|Test|223| Final evaluation only |
+|Training|778|
+|Validation|112|
+|Test|223|
 
 - **Random seed:** `random_state=0`
 
@@ -125,20 +125,20 @@ Two `GCNConv` layers (ReLU, dropout 0.5 after the first), `global_mean_pool`, an
 
 - `in_channels` = 3, `hidden_channels` = 64, `num_classes` = 2
 - Loss: `CrossEntropyLoss`, optimizer: `Adam` (lr = 0.01), epochs: 100, batch size: 32
-- **Best checkpoint:** epoch 57 (validation loss = 0.5753)
+- **Best checkpoint:** epoch 63 (validation loss = 0.5755)
 
 Training progress (every 10 epochs):
 ```
 Epoch  10 | Train Loss: 0.6131 | Val Loss: 0.6125
-Epoch  20 | Train Loss: 0.5946 | Val Loss: 0.6121
-Epoch  30 | Train Loss: 0.5870 | Val Loss: 0.6016
-Epoch  40 | Train Loss: 0.5898 | Val Loss: 0.6024
-Epoch  50 | Train Loss: 0.5904 | Val Loss: 0.6021
-Epoch  60 | Train Loss: 0.5826 | Val Loss: 0.5929
-Epoch  70 | Train Loss: 0.5777 | Val Loss: 0.5772
-Epoch  80 | Train Loss: 0.5776 | Val Loss: 0.5850
-Epoch  90 | Train Loss: 0.5781 | Val Loss: 0.5823
-Epoch 100 | Train Loss: 0.5843 | Val Loss: 0.5954
+Epoch  20 | Train Loss: 0.5950 | Val Loss: 0.6115
+Epoch  30 | Train Loss: 0.5869 | Val Loss: 0.5992
+Epoch  40 | Train Loss: 0.5861 | Val Loss: 0.5938
+Epoch  50 | Train Loss: 0.5896 | Val Loss: 0.6038
+Epoch  60 | Train Loss: 0.5822 | Val Loss: 0.5990
+Epoch  70 | Train Loss: 0.5791 | Val Loss: 0.5788
+Epoch  80 | Train Loss: 0.5778 | Val Loss: 0.5896
+Epoch  90 | Train Loss: 0.5795 | Val Loss: 0.5843
+Epoch 100 | Train Loss: 0.5838 | Val Loss: 0.5955
 ```
 
 ![GCN loss curves](loss_gcn.png)
@@ -149,20 +149,36 @@ Two `GATConv` layers (first with 4 heads, ELU, dropout 0.5 after the first; seco
 
 - `in_channels` = 3, `hidden_channels` = 64, `heads` = 4, `num_classes` = 2
 - Loss: `CrossEntropyLoss`, optimizer: `Adam` (lr = 0.01), epochs: 100, batch size: 32
-- **Best checkpoint:** epoch 93 (validation loss = 0.5781)
+- **Best checkpoint:** epoch 64 (validation loss = 0.5777)
 
 Training progress (every 10 epochs):
 ```
 Epoch  10 | Train Loss: 0.6424 | Val Loss: 0.6379
-Epoch  20 | Train Loss: 0.6050 | Val Loss: 0.6147
-Epoch  30 | Train Loss: 0.5916 | Val Loss: 0.6099
-Epoch  40 | Train Loss: 0.6041 | Val Loss: 0.5944
-Epoch  50 | Train Loss: 0.5971 | Val Loss: 0.6967
-Epoch  60 | Train Loss: 0.5876 | Val Loss: 0.6573
-Epoch  70 | Train Loss: 0.5849 | Val Loss: 0.6019
-Epoch  80 | Train Loss: 0.5965 | Val Loss: 0.6322
-Epoch  90 | Train Loss: 0.5962 | Val Loss: 0.5856
-Epoch 100 | Train Loss: 0.5897 | Val Loss: 0.5836
+Epoch  20 | Train Loss: 0.6082 | Val Loss: 0.6059
+Epoch  30 | Train Loss: 0.5874 | Val Loss: 0.6137
+Epoch  40 | Train Loss: 0.5988 | Val Loss: 0.6347
+Epoch  50 | Train Loss: 0.5972 | Val Loss: 0.6273
+Epoch  60 | Train Loss: 0.5879 | Val Loss: 0.6607
+Epoch  70 | Train Loss: 0.5888 | Val Loss: 0.5973
+Epoch  80 | Train Loss: 0.5972 | Val Loss: 0.6152
+Epoch  90 | Train Loss: 0.5988 | Val Loss: 0.5801
+Epoch 100 | Train Loss: 0.5920 | Val Loss: 0.5810
 ```
 
 ![GAT loss curves](loss_gat.png)
+
+## Part 4: Model Evaluation
+
+Each model was restored from the checkpoint with the lowest validation loss
+(GCN: epoch 63, GAT: epoch 64) and evaluated once on the
+held-out test set (223 graphs). Predicted labels are `argmax(dim=1)` of the model output.
+The test set was not used to choose epochs, tune hyperparameters, or update weights.
+
+| Metric | GCN | GAT |
+|---|---|---|
+| Accuracy | 0.6323 | 0.6323 |
+| Precision | 0.6562 | 0.6724 |
+| Recall | 0.4118 | 0.3824 |
+| F1-score | 0.5060 | 0.4875 |
+
+Precision, recall and F1 are computed for class 1 (the positive class, sklearn's default for binary labels).

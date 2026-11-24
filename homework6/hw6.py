@@ -10,6 +10,7 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.nn import GCNConv, GATConv, global_mean_pool
 from torch_geometric.datasets import TUDataset
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 readme = []   # used to append outputs from every section
 
@@ -58,7 +59,7 @@ add(f"""## Part 1: Data Loading and Exploration
 ```
 ### Average number of nodes per graph
 
-**{avg_nodes:.2f}** nodes per graph (over all {num_graphs} graphs).""")
+**{avg_nodes:.2f}** nodes per graph.""")
 
 print("Data exploration finished")
 
@@ -79,11 +80,11 @@ test_dataset = dataset[test_idx]
 
 add(f"""## Part 2: Train, Validation, Test Split
 
-|Dataset|Number of graphs|Purpose|
+|Dataset|Number of graphs
 |---|---|---|
-|Training|{len(train_dataset)}| Fit model parameters |
-|Validation|{len(val_dataset)}| Select each model checkpoint |
-|Test|{len(test_dataset)}| Final evaluation only |
+|Training|{len(train_dataset)}|
+|Validation|{len(val_dataset)}|
+|Test|{len(test_dataset)}|
 
 - **Random seed:** `random_state={SEED}`""")
 
@@ -99,7 +100,7 @@ BATCH_SIZE = 32
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-
+#grabs first mini-batch from trining loader
 batch0 = next(iter(train_loader))
 
 add(f"""## Part 3: Model Building and Training
@@ -122,7 +123,7 @@ Example training mini-batch:
 - `y` shape: `{tuple(batch0.y.shape)}` (one label per graph)""")
 
 
-# ---------------- Model definitions ----------------
+# Model definitions
 class GCNClassifier(nn.Module):
     def __init__(self, in_channels, hidden_channels, num_classes, dropout=0.5):
         super().__init__()
@@ -155,9 +156,8 @@ class GATClassifier(nn.Module):
         return self.lin(x)
 
 
-# ---------------- Training helpers ----------------
+# Training helpers
 def evaluate_loss(model, loader, criterion):
-    """Average loss per graph, no gradients, no parameter updates."""
     model.eval()
     total_loss, total_graphs = 0.0, 0
     with torch.no_grad():
@@ -236,7 +236,7 @@ HIDDEN = 64
 EPOCHS = 100
 LR = 0.01
 
-# ---------------- Model 1: GCN ----------------
+# Model 1:GCN
 gcn = GCNClassifier(dataset.num_features, HIDDEN, dataset.num_classes)
 gcn_res = train_model(gcn, "GCN", epochs=EPOCHS, lr=LR)
 gcn_plot = plot_losses(gcn_res, "GCN")
@@ -256,7 +256,7 @@ Training progress (every 10 epochs):
 
 ![GCN loss curves]({gcn_plot})""")
 
-# ---------------- Model 2: GAT ----------------
+# Model 2:GAT
 HEADS = 4
 gat = GATClassifier(dataset.num_features, HIDDEN, dataset.num_classes, heads=HEADS)
 gat_res = train_model(gat, "GAT", epochs=EPOCHS, lr=LR)
@@ -276,6 +276,62 @@ Training progress (every 10 epochs):
 ```
 
 ![GAT loss curves]({gat_plot})""")
+
+# Part 4: Model Evaluation
+
+def predict(model, loader):
+    """Return true labels and predicted labels for every graph in the loader."""
+    model.eval()
+    y_true, y_pred = [], []
+    with torch.no_grad():
+        for data in loader:
+            data = data.to(device)
+            out = model(data.x, data.edge_index, data.batch)   # [num_graphs, num_classes] scores
+            pred = out.argmax(dim=1)                           # index of the largest score
+            y_true.extend(data.y.cpu().tolist())
+            y_pred.extend(pred.cpu().tolist())
+    return y_true, y_pred
+
+
+def test_metrics(model, ckpt_path):
+    # restore the checkpoint selected by validation loss (not the last-epoch weights)
+    model.load_state_dict(torch.load(ckpt_path, map_location=device))
+    model = model.to(device)
+    y_true, y_pred = predict(model, test_loader)
+    return {
+        "Accuracy": accuracy_score(y_true, y_pred),
+        "Precision": precision_score(y_true, y_pred, zero_division=0),
+        "Recall": recall_score(y_true, y_pred, zero_division=0),
+        "F1-score": f1_score(y_true, y_pred, zero_division=0),
+    }
+
+
+# fresh model instances, so nothing from training carries over except the saved checkpoint
+gcn_best = GCNClassifier(dataset.num_features, HIDDEN, dataset.num_classes)
+gat_best = GATClassifier(dataset.num_features, HIDDEN, dataset.num_classes, heads=HEADS)
+
+gcn_scores = test_metrics(gcn_best, "best_gcn.pt")
+gat_scores = test_metrics(gat_best, "best_gat.pt")
+
+for name, s in [("GCN", gcn_scores), ("GAT", gat_scores)]:
+    print(name, {k: round(v, 4) for k, v in s.items()})
+
+add(f"""## Part 4: Model Evaluation
+
+Each model was restored from the checkpoint with the lowest validation loss
+(GCN: epoch {gcn_res['best_epoch']}, GAT: epoch {gat_res['best_epoch']}) and evaluated once on the
+held-out test set ({len(test_dataset)} graphs). Predicted labels are `argmax(dim=1)` of the model output.
+The test set was not used to choose epochs, tune hyperparameters, or update weights.
+
+| Metric | GCN | GAT |
+|---|---|---|
+| Accuracy | {gcn_scores['Accuracy']:.4f} | {gat_scores['Accuracy']:.4f} |
+| Precision | {gcn_scores['Precision']:.4f} | {gat_scores['Precision']:.4f} |
+| Recall | {gcn_scores['Recall']:.4f} | {gat_scores['Recall']:.4f} |
+| F1-score | {gcn_scores['F1-score']:.4f} | {gat_scores['F1-score']:.4f} |
+
+Precision, recall and F1 are computed for class 1 (the positive class, sklearn's default for binary labels).""")
+
 
 #Write README.md
 with open("README.md", "w") as f:
